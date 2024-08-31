@@ -1,0 +1,50 @@
+services:
+  orchestrator-base:
+    container_name: wasmiot-orchestrator
+    image: ghcr.io/liquidai-project/wasmiot-orchestrator
+    build:
+      context: ./fileserv
+      dockerfile: ./Dockerfile
+    ports:
+      - ${PUBLIC_PORT:-3000}:3000
+    networks:
+      default:
+        ipv4_address: 172.15.0.10
+    environment:
+      MONGO_HOST: ${MONGO_HOST:-mongo}
+      MONGO_PORT: ${MONGO_PORT:-27017}
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      WASMIOT_INIT_FOLDER: ${WASMIOT_INIT_FOLDER:-/init}
+      WASMIOT_CLEAR_LOGS: ${WASMIOT_CLEAR_LOGS:-true}
+    volumes:
+      - ./init:/init
+    command: nodejs ./server.js
+
+  mongo:
+    image: mongo:6.0.15
+    restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: 172.15.0.2
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    command: mongod --port ${MONGO_PORT:-27017}
+    volumes:
+      - mongo-config:/data/configdb
+      - mongo-db:/data/db
+
+volumes:
+  mongo-config:
+  mongo-db:
+
+networks:
+  default:
+    # Network for the orchestrator and MongoDB.
+    name: wasmiot-net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.15.0.0/24

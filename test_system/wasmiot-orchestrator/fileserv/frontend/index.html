@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset='utf-8'>
+  <link rel="StyleSheet" href="style.css" type="text/css" />
+  <title>Wasm-IoT</title>
+  <!-- Sentry bundle and init -->
+  <script src="https://browser.sentry-cdn.com/7.51.2/bundle.tracing.min.js"
+          crossorigin="anonymous"></script>
+
+  <script src="sentry.js"></script>
+  <script src="/utils.js"></script>
+  <script type="text/javascript" src="index.js"></script>
+
+</head>
+<body>
+
+  <div id="header" class="dull">
+    <div class="container">
+      <h2>WasmIoT - Orchestrator</h2>
+    </div>
+  </div>
+
+  <div id="content">
+    <div id="selector" class="dull">
+      <div id="selector-list">
+        <label class="tab-selector dull">
+          <input type="radio" name="tab-selector" data-tab-id="resource-listing">
+          Resources
+        </label>
+        <label class="tab-selector dull">
+          <input type="radio" name="tab-selector" data-tab-id="module-create">
+          Module creation
+        </label>
+        <label class="tab-selector dull">
+          <input type="radio" name="tab-selector" data-tab-id="module-description">
+          Module description
+        </label>
+        <label class="tab-selector dull">
+          <input type="radio" name="tab-selector" data-tab-id="deployment-create">
+          Deployment manifest creation
+        </label>
+        <label class="tab-selector dull">
+          <input type="radio" name="tab-selector" data-tab-id="deployment-update">
+          Deployment manifest update
+        </label>
+         <label class="tab-selector dull">
+          <input type="radio" name="tab-selector" data-tab-id="deployment-action">
+          Deployment of deployment manifests
+        </label>
+        <label class="tab-selector dull">
+          <input type="radio" name="tab-selector" data-tab-id="execution-start">
+          Execution
+        </label>
+      </div>
+    </div>
+
+    <div id="tab-container" class="dull">
+      <!-- Resource listing. -->
+      <div id="resource-listing" class="tab hidden">
+        <div>
+          <ul>
+            <li>
+              <a href="/file/device">Devices</a>
+              <div>
+                <form id="device-deleteall-form">
+                  <input type="submit" value="DELETE ALL DEVICES"/>
+                </form>
+              </div>
+              <div>
+                <form id="device-discovery-reset-form">
+                  <input type="submit" value="RESET DEVICE DISCOVERY"/>
+                </form>
+              </div>
+            </li>
+            <li>
+              <a href="/file/module">Modules</a>
+              <form id="module-deleteall-form">
+                <input type="submit" value="DELETE ALL MODULES"/>
+              </form>
+            </li>
+            <li>
+              <a href="/file/manifest">Deployments</a>
+              <form id="manifest-deleteall-form">
+                <input type="submit" value="DELETE ALL MANIFESTS"/>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Module creation. -->
+      <div id="module-create" class="tab hidden">
+        <div>
+          <form id="module-form">
+            <fieldset>
+              <legend>Create a new module</legend>
+              <div>
+                <div>
+                  <label for="mname">Name</label>
+                  <input id="mname" name="name" type="text" value="" required>
+                </div>
+                <div>
+                  <label for="wfile">WebAssembly binary (<code>.wasm</code>)</label>
+                  <input type="file" id="wfile" name="module" required>
+                </div>
+              </div>
+            </fieldset>
+            <input type="submit" value="Submit"/>
+          </form>
+        </div>
+      </div>
+
+      <!-- Module properties. TODO: Rename IDs -->
+      <div id="module-description" class="tab hidden">
+        <div>
+          <form id="module-properties-form">
+            <fieldset>
+              <legend>Add function descriptions and data files</legend>
+              <div>
+                <div>
+                  <label for="wmodule-select">Select the module:</label>
+                  <select id="wmodule-select" name="id" required>
+                    <option value="">Please select an existing module:</option>
+                  </select>
+                </div>
+                <div>
+                  <p>Fill out function interfaces</p>
+                  <ol id="wmodule-function-list" data-json-key="functions">
+                  </ol>
+                  <!-- Dynamically generated fields based on .wasm file go here. -->
+                </div>
+                <div id="wmodule-mounts-list">
+                  <ol id="wmodule-function-list" data-json-key="mounts">
+                  <!-- Named files to be mounted go here. -->
+                  </ol>
+                </div>
+              </div>
+            </fieldset>
+            <input type="submit" value="Submit"/>
+          </form>
+        </div>
+      </div>
+
+      <!-- Deployment manifest creation. -->
+      <div id="deployment-create" class="tab hidden">
+        <div>
+          <form id="deployment-form">
+            <fieldset>
+              <legend>Create a deployment manifest</legend>
+              <div>
+                <div>
+                  <label for="dname">Name</label>
+                  <input id="dname" name="name" type="text" value="" required>
+                </div>
+                <div>
+                  <p>Procedure-call sequence:</p>
+                  <ol id="dprocedure-sequence-list" data-json-key="sequence">
+                  </ol>
+                </div>
+              </div>
+            </fieldset>
+            <input type="submit" value="Submit"/>
+          </form>
+        </div>
+      </div>
+
+      <!-- Deployment manifest update. -->
+      <div id="deployment-update" class="tab hidden">
+        <div>
+          <form id="deployment-update-form">
+            <fieldset>
+              <legend>Update a deployment manifest</legend>
+              <div>
+                <div>
+                  <label for="udeployment-select">Select the deployment</label>
+                    <select id="udeployment-select" name="id" required>
+                      <option value="">Please select a deployment:</option>
+                    </select>
+                </div>
+                <!-- Same shared fields for all deployments. -->
+                <div class="hidden">
+                  <div>
+                    <label for="duid">ID</label>
+                    <input id="duid" name="id" required type="text" value="filled-programmatically" disabled>
+
+                    <label for="duname">Name</label>
+                    <input id="duname" name="name" required type="text" value="">
+                  </div>
+                  <div>
+                    <p>Procedure-call sequence:</p>
+                    <ol id="duprocedure-sequence-list" data-json-key="sequence">
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+            <input type="submit" value="Submit"/>
+          </form>
+        </div>
+      </div>
+
+      <!-- Deploying. -->
+      <div id="deployment-action" class="tab hidden">
+        <div>
+          <form id="deployment-action-form">
+            <fieldset>
+              <legend>Deploy</legend>
+              <div>
+                <div>
+                  <label for="damanifest-select">Select the deployment</label>
+                    <select id="damanifest-select" name="id" required>
+                      <option value="">Please select a deployment:</option>
+                    </select>
+                </div>
+              </div>
+            </fieldset>
+            <input type="submit" value="Deploy!"/>
+          </form>
+        </div>
+      </div>
+
+      <!-- Execution. -->
+      <div id="execution-start" class="tab hidden">
+        <div>
+          <form id="execution-form">
+            <fieldset>
+              <legend>Execute</legend>
+              <div>
+                <div>
+                  <label for="edeployment-select">Select the deployment:</label>
+                    <select id="edeployment-select" name="id" required>
+                      <option value="">Please select a deployment:</option>
+                    </select>
+                </div>
+                <!-- Generate here the needed form-fields according to start function description -->
+              </div>
+            </fieldset>
+            <input type="submit" value="Execute!"/>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status" class="dull">
+    <p>no output</p>
+  </div>
+
+</body>
+</html>

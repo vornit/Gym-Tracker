@@ -1,0 +1,18 @@
+python-dotenv
+flask
+zeroconf
+pyopenssl
+numpy<2
+requests
+adafruit-circuitpython-dht
+sentry-sdk[flask]
+
+# Recommended for Docker
+# See 3.b from https://pypi.org/project/opencv-python/
+opencv-python-headless
+
+pywasm3
+wasmtime
+
+# Uncomment the following when using Raspberry Pi (required by adafruit)
+# RPi.GPIO

@@ -1,5 +1,9 @@
 .DS_Store
 node_modules/
 /dist/
-env/
+.env/
 __pycache__
+docker-compose.yml
+start.sh
+.devcontainer
+test_system/

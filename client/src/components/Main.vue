@@ -54,7 +54,7 @@
           </p>
           <p style="display: flex; align-items: center;">
             <span style="width: 100px;">Results:</span>
-            <input type="text" :value="receivedSensorData" readonly style="flex-grow: 1;" />
+            <input type="text" :value="receivedSensorData[0]" readonly style="flex-grow: 1;" />
           </p>
 
           <p>
@@ -111,12 +111,27 @@ export default {
       axios.get(path)
         .then((res) => {
           const fullSensorData = res.data.sensor_data;
-          this.receivedSensorData = fullSensorData.slice(0, 312);  // Take only the first 300 values
+          this.receivedSensorData = fullSensorData;
           console.log('Sensor data:', this.receivedSensorData);  // Print data to the console
         })
         .catch((error) => {
           console.error(`Error fetching sensor data: ${error}`);
         });
+    },
+    runInference() {
+      if (!this.classifierInitialized) {
+        alert('Classifier is not initialized yet.');
+        return;
+      }
+      try {
+        const features = this.featuresInput
+          .split(',')
+          .map((x) => Number(x.trim()));
+        const res = this.classifier.classify(features);
+        this.results = JSON.stringify(res, null, 4);
+      } catch (ex) {
+        alert('Failed to classify: ' + (ex.message || ex.toString()));
+      }
     },
     runInference() {
       if (!this.classifierInitialized) {

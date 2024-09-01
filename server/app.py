@@ -2,7 +2,9 @@ import uuid
 import threading
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from ble_tool import connect_to_device
+#from ble_tool import connect_to_device
+from eim_ble_tool import connect_to_device
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -12,12 +14,14 @@ sensor_data = []
 stop_event = threading.Event()
 
 accelerometer_data = []
+chunked_accelerometer_data = []
 
 
 def background_sensor_task(device_address):
     global stop_event
     global accelerometer_data
     accelerometer_data = connect_to_device(device_address, stop_event)
+
 
 @app.route('/start_sensor', methods=['GET'])
 def start_sensor():
@@ -39,7 +43,11 @@ def stop_sensor():
 @app.route('/get_sensor_data', methods=['GET'])
 def get_sensor_data():
     global accelerometer_data
-    return jsonify({'sensor_data': accelerometer_data})
+    time.sleep(0.1)
+    chunked_accelerometer_data = [accelerometer_data[i:i + 312] for i in range(0, len(accelerometer_data), 312)]
+    return jsonify({'sensor_data': chunked_accelerometer_data})
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

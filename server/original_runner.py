@@ -4,7 +4,7 @@ from edge_impulse_linux.runner import ImpulseRunner
 from ble_tool import connect_to_device
 
 def run_inference(model_path, device_address=None, duration=5, features=None):
-    # Ladataan malli ja ajetaan inferenssi
+
     runner = ImpulseRunner(model_path)
 
     try:
@@ -62,5 +62,3 @@ def run_inference(model_path, device_address=None, duration=5, features=None):
 
     finally:
         runner.stop()
-
-    return horizon_count

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accelerometer data visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Accelerometer data visualization</h1>
+    <textarea id="dataInput" rows="4" cols="50">0.48,9.42,-0.02,0.57,9.58,0.13,0.45,9.58,-0.2,0.49,9.57,0.08,0.46,9.41,-0.07,0.46,9.51,-0.05,0.54,9.41,-0.07,0.48</textarea><br>
+    <button onclick="drawChart()">Visualize</button>
+    <canvas id="accelerationChart"></canvas>
+
+    <script>
+        function drawChart() {
+            const rawData = document.getElementById('dataInput').value.split(',').map(Number);
+            
+            const xData = [], yData = [], zData = [];
+            for (let i = 0; i < rawData.length; i += 3) {
+                xData.push(rawData[i]);
+                yData.push(rawData[i + 1]);
+                zData.push(rawData[i + 2]);
+            }
+
+            const ctx = document.getElementById('accelerationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: xData.length }, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: 'X-Axis',
+                            data: xData,
+                            borderColor: 'red',
+                            fill: false,
+                        },
+                        {
+                            label: 'Y-Axis',
+                            data: yData,
+                            borderColor: 'green',
+                            fill: false,
+                        },
+                        {
+                            label: 'Z-Axis',
+                            data: zData,
+                            borderColor: 'blue',
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Sample'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Acceleration (m/s²)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

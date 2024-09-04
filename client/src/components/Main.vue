@@ -1,9 +1,9 @@
 <template>
   <div class="container">
-    <TabsWrapper>
-      <Tab title="Main">
-        <div class="row">
-          <div class="col-sm-10">
+    <div class="row">
+      <div class="col-sm-8">
+        <TabsWrapper>
+          <Tab title="Main">
             <h1>Gym app</h1>
             <table class="table table-hover">
               <thead>
@@ -47,30 +47,19 @@
                 <Visualization :accelerometerData="accelerometerData" />
               </div>
 
-              <p>
-                Set length: {{ results }}
-              </p>
-
-              <p>
-                {{ storedRepetations }}
-              </p>
-
+              <p>Set length: {{ results }}</p>
+              <p>{{ storedRepetations }}</p>
             </div>
-          </div>
-        </div>
-      </Tab>
-      <Tab title="Tab22">
-        <div class="row">
-          <div class="col-sm-10">
-            <h1>Gym app</h1>
+          </Tab>
 
+          <Tab title="Tab22">
+            <h1>Gym app</h1>
             <div>
               <p style="display: flex; align-items: center;">
                 <span style="width: 100px;">Features:</span>
                 <input type="text" v-model="featuresInput" id="features" placeholder="Paste your features here"
                   style="flex-grow: 1;" />
               </p>
-
               <p>
                 <button @click="runInference">Run inference</button>
               </p>
@@ -78,16 +67,45 @@
               <pre>{{ results }}</pre>
               </p>
             </div>
+          </Tab>
+        </TabsWrapper>
+      </div>
+
+      <!-- Logging area -->
+      <div class="col-sm-4">
+        <h3>Logs:</h3>
+        <div class="logging-area" ref="loggingArea">
+
+          <div class="log-entry" v-for="log in logs" :key="log.id">
+            <p>{{ log.timestamp }}: {{ log.message }}</p>
           </div>
         </div>
-      </Tab>
-    </TabsWrapper>
-  </div>
 
+        <h3>5 recent model exercises:</h3>
+        <div class="logging-area" ref="loggingArea">
+          <div>
+            <pre>{{ previousExercises[0] }}</pre>
+            <pre>{{ previousExercises[1] }}</pre>
+            <pre>{{ previousExercises[2] }}</pre>
+            <pre>{{ previousExercises[3] }}</pre>
+            <pre>{{ previousExercises[4] }}</pre>
+          </div>
+        </div>
+
+        <h3>Latest model result:</h3>
+        <pre>{{ modelResult }}</pre>
+      </div>
+
+
+
+    </div> <!-- Close the row div here -->
+  </div>
 </template>
 
+
+
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from 'axios';
 import TabsWrapper from './TabsWrapper.vue';
 import Tab from './Tab.vue';
@@ -104,8 +122,24 @@ const classifierInitialized = ref(false);
 const pollingInterval = ref(null);
 const storedRepetations = ref([])
 const exerciseNames = ['Bench', 'Squat', 'Pull-Up'];
+const previousExercises = ref([]);
+const modelResult = ref([]);
 
-// Initialize exercises dynamically with refs in a loop
+const logs = ref([]);
+const loggingArea = ref(null);
+
+const setLength = ref('');
+const exerciseStarted = ref(false);
+const sensorData = ref([]);
+
+const addLog = (message) => {
+  const timestamp = new Date().toLocaleTimeString();
+  logs.value.push({ id: logs.value.length, message, timestamp });
+
+  // Automatically scroll to the bottom when a log is added
+  scrollToBottom();
+};
+
 const exercises = ref(exerciseNames.map((name, index) => ({
   name: name,
   set1: ref(index * 3 + 1),
@@ -123,38 +157,53 @@ const stopSensor = () => {
   const path = 'http://localhost:5001/stop_sensor';
   axios.get(path)
     .then((res) => {
-      console.log(res.data.status);
+      addLog('Sensor stopped.');
       stopPolling();
     })
     .catch((error) => {
-      console.error(`Error stopping sensor: ${error}`);
+      addLog(`Error stopping sensor: ${error}`);
     });
 };
 
 const startPolling = () => {
-  pollingInterval.value = setInterval(() => {
-    const path = 'http://localhost:5001/start_scanning';
-    axios.get(path)
-      .then((res) => {
-        const sensorData = res.data.status.sensor_data;
-        const setLength = res.data.status.set_length;
 
-        console.log(setLength);
-        console.log(sensorData);
+  if (pollingInterval.value) {
+    return;
+  }
 
-        if (setLength !== '' && sensorData.length > 0) {
-          storedRepetations.value.push(setLength);
-          const valuesString = sensorData.join(', ');
-          accelerometerData.value = valuesString;
-        }
+  if (!pollingInterval.value) {
+    addLog('Sensor started.');
 
-        console.log(valuesString);
-        console.log(`Set length: ${setLength}`);
-      })
-      .catch((error) => {
-        console.error(`Error fetching sensor data: ${error.message || error}`);
-      });
-  }, 2000);
+    pollingInterval.value = setInterval(() => {
+      const path = 'http://localhost:5001/start_scanning';
+      axios.get(path)
+        .then((res) => {
+          const sensorData = res.data.status.sensor_data;
+          const setLength = res.data.status.set_length;
+          const setStarted = res.data.status.exerciseStarted;
+          previousExercises.value = res.data.status.previous_exercises;
+          modelResult.value = res.data.status.result;
+
+          console.log(modelResult);
+
+          addLog(setStarted);
+
+          //onsole.log(setLength);
+          //onsole.log(sensorData);
+          //onsole.log(exerciseStarted);
+          console.log(previousExercises);
+
+          if (setLength !== '' && sensorData.length > 0) {
+            storedRepetations.value.push(setLength);
+            const valuesString = sensorData.join(', ');
+            accelerometerData.value = valuesString;
+          }
+        })
+        .catch((error) => {
+          console.error(`Error fetching sensor data: ${error.message || error}`);
+        });
+    }, 2000);
+  }
 };
 
 const stopPolling = () => {
@@ -179,6 +228,18 @@ const runInference = () => {
     alert('Failed to classify: ' + (ex.message || ex.toString()));
   }
 };
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (loggingArea.value) {
+      loggingArea.value.scrollTop = loggingArea.value.scrollHeight;
+    }
+  });
+};
+
+watch(logs, () => {
+  scrollToBottom();
+});
 
 onMounted(() => {
   let edgeImpulseStandalone = document.createElement('script');
@@ -207,14 +268,17 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.header-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
+.logging-area {
+  border: 1px solid #ccc;
+  padding: 10px;
+  height: 200px;
+  margin-bottom: 10px;
+  overflow-y: auto;
+  background-color: #f9f9f9;
 }
 
-.app-title {
-  margin-left: 20px;
+.log-entry {
+  margin-bottom: 10px;
 }
 
 .square-input {

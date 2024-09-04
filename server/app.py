@@ -12,12 +12,14 @@ stop_event = threading.Event()
 accelerometer_data = []
 scanning_on = False
 
-def update_accelerometer_data(updated_sensor_data, set_length, exerciseStarted):
+def update_accelerometer_data(updated_sensor_data, set_length, exerciseStarted, previous_exercises, result):
     global accelerometer_data
     accelerometer_data = {
         "sensor_data": updated_sensor_data,
         "set_length": set_length,
-        "exerciseStarted":  exerciseStarted
+        "exerciseStarted":  exerciseStarted,
+        "previous_exercises": previous_exercises,
+        "result": result
     }
 
 def background_sensor_task(device_address):

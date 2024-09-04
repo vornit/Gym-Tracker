@@ -15,27 +15,20 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Bench</td>
-                  <td><input class="square-input"></td>
-                  <td><input class="square-input"></td>
-                  <td><input class="square-input"></td>
-                </tr>
-                <tr>
-                  <td>Squat</td>
-                  <td><input class="square-input"></td>
-                  <td><input class="square-input"></td>
-                  <td><input class="square-input"></td>
-                </tr>
-                <tr>
-                  <td>Pull-Up</td>
-                  <td><input class="square-input"></td>
-                  <td><input class="square-input"></td>
-                  <td><input class="square-input"></td>
+                <tr v-for="(exercise, exerciseIndex) in exercises" :key="exerciseIndex">
+                  <td>{{ exercise.name }}</td>
+                  <td>
+                    <input class="square-input" :value="getStoredValue(exerciseIndex * 3)" readonly />
+                  </td>
+                  <td>
+                    <input class="square-input" :value="getStoredValue(exerciseIndex * 3 + 1)" readonly />
+                  </td>
+                  <td>
+                    <input class="square-input" :value="getStoredValue(exerciseIndex * 3 + 2)" readonly />
+                  </td>
                 </tr>
               </tbody>
             </table>
-
             <div>
               <button type="button" class="btn btn-success btn-sm" @click="startPolling">
                 Start scanning
@@ -44,21 +37,15 @@
                 Stop scanning
               </button>
             </div>
-
             <div>
               <p style="display: flex; align-items: center;">
-                <span style="width: 100px;">Features:</span>
-                <input type="text" v-model="featuresInput" id="features" placeholder="Paste your features here"
-                  style="flex-grow: 1;" />
-              </p>
-              <p style="display: flex; align-items: center;">
                 <span style="width: 100px;">Results:</span>
-                <input type="text" :value="receivedSensorData" readonly style="flex-grow: 1;" />
+                <input type="text" :value="accelerometerData" readonly style="flex-grow: 1;" />
               </p>
 
-              <p>
-                <button @click="runInference">Run inference</button>
-              </p>
+              <div id="visualization">
+                <Visualization :accelerometerData="accelerometerData" />
+              </div>
 
               <p>
                 Set length: {{ results }}
@@ -96,6 +83,7 @@
       </Tab>
     </TabsWrapper>
   </div>
+
 </template>
 
 <script setup>
@@ -103,6 +91,9 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import TabsWrapper from './TabsWrapper.vue';
 import Tab from './Tab.vue';
+import Visualization from './Visualization.vue';
+
+const accelerometerData = ref('0,0,0,0,0,0,0,0,0');
 
 const featuresInput = ref('');
 const results = ref('');
@@ -112,6 +103,21 @@ const classifier = ref(null);
 const classifierInitialized = ref(false);
 const pollingInterval = ref(null);
 const storedRepetations = ref([])
+const exerciseNames = ['Bench', 'Squat', 'Pull-Up'];
+
+// Initialize exercises dynamically with refs in a loop
+const exercises = ref(exerciseNames.map((name, index) => ({
+  name: name,
+  set1: ref(index * 3 + 1),
+  set2: ref(index * 3 + 2),
+  set3: ref(index * 3 + 3)
+})));
+
+const getStoredValue = (index) => {
+  return storedRepetations.value[index] !== undefined
+    ? storedRepetations.value[index]
+    : ''; // Empty if no value at this index
+};
 
 const stopSensor = () => {
   const path = 'http://localhost:5001/stop_sensor';
@@ -132,16 +138,14 @@ const startPolling = () => {
       .then((res) => {
         const sensorData = res.data.status.sensor_data;
         const setLength = res.data.status.set_length;
-        
-        const valuesString = sensorData.join(', ');
-        receivedSensorData.value = valuesString;  // Update with sensor data
-        results.value = {setLength};  // Update with set length
 
         console.log(setLength);
         console.log(sensorData);
+
         if (setLength !== '' && sensorData.length > 0) {
           storedRepetations.value.push(setLength);
-          console.log("AAAAAAAAAAA");
+          const valuesString = sensorData.join(', ');
+          accelerometerData.value = valuesString;
         }
 
         console.log(valuesString);
@@ -150,7 +154,7 @@ const startPolling = () => {
       .catch((error) => {
         console.error(`Error fetching sensor data: ${error.message || error}`);
       });
-  }, 2000);  // Poll every 2 seconds
+  }, 2000);
 };
 
 const stopPolling = () => {

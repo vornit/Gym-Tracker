@@ -85,7 +85,7 @@ class NotificationDelegate(DefaultDelegate):
                 elif previous_exercises.count("stay") >= 3 and exercise_started == True:
                     print("exercise stopped")
                     exercise_started = False
-                    slice_range = (current_exercise_duration + 5) * 312
+                    slice_range = (current_exercise_duration + 6) * 312
                     current_exercise_duration = 0
                     all_data = all_data[-slice_range:]
                     np_data = np.array(all_data)

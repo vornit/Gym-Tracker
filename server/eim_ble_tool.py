@@ -30,6 +30,10 @@ class NotificationDelegate(DefaultDelegate):
     def handleNotification(self, cHandle, data):
         global accelerometer_data, previous_exercises, exercise_started, all_data, current_exercise_duration
 
+        accelerometer_data3 = []
+        set_length = ''
+        exerciseStarted = False
+
         if len(data) == 12:
             ax, ay, az = struct.unpack('fff', data)
             ax = round(ax, 2)
@@ -93,9 +97,13 @@ class NotificationDelegate(DefaultDelegate):
                     accelerometer_data3 = all_data.copy()
                     all_data.clear()
 
-                    # Call the update callback to notify app.py
-                    if self.update_callback:
-                        self.update_callback(accelerometer_data3)
+                    exerciseStarted = True
+
+                    set_length = len(peaks)
+
+                # Call the update callback to notify app.py
+                if self.update_callback:
+                    self.update_callback(accelerometer_data3, set_length, exerciseStarted)
 
 def connect_to_device(device_address, stop_event, update_callback):
     print(f"Connecting to {device_address}...")

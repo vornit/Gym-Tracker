@@ -2,7 +2,6 @@ import uuid
 import threading
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-#from ble_tool import connect_to_device
 from eim_ble_tool import connect_to_device
 import time
 
@@ -10,14 +9,16 @@ app = Flask(__name__)
 CORS(app)
 
 stop_event = threading.Event()
-
 accelerometer_data = []
-chunked_accelerometer_data = []
 scanning_on = False
 
-def update_accelerometer_data(updated_sensor_data):
+def update_accelerometer_data(updated_sensor_data, set_length, exerciseStarted):
     global accelerometer_data
-    accelerometer_data = updated_sensor_data
+    accelerometer_data = {
+        "sensor_data": updated_sensor_data,
+        "set_length": set_length,
+        "exerciseStarted":  exerciseStarted
+    }
 
 def background_sensor_task(device_address):
     global stop_event

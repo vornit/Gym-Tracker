@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <TabsWrapper>
-      <Tab title="Tab1">
+      <Tab title="Main">
         <div class="row">
           <div class="col-sm-10">
             <h1>Gym app</h1>
@@ -43,9 +43,6 @@
               <button type="button" class="btn btn-success btn-sm" @click="stopSensor">
                 Stop scanning
               </button>
-              <button type="button" class="btn btn-success btn-sm" @click="getSensorData">
-                Print sensor data
-              </button>
             </div>
 
             <div>
@@ -62,15 +59,41 @@
               <p>
                 <button @click="runInference">Run inference</button>
               </p>
+
+              <p>
+                Set length: {{ results }}
+              </p>
+
+              <p>
+                {{ storedRepetations }}
+              </p>
+
+            </div>
+          </div>
+        </div>
+      </Tab>
+      <Tab title="Tab22">
+        <div class="row">
+          <div class="col-sm-10">
+            <h1>Gym app</h1>
+
+            <div>
+              <p style="display: flex; align-items: center;">
+                <span style="width: 100px;">Features:</span>
+                <input type="text" v-model="featuresInput" id="features" placeholder="Paste your features here"
+                  style="flex-grow: 1;" />
+              </p>
+
+              <p>
+                <button @click="runInference">Run inference</button>
+              </p>
               <p id="results">
               <pre>{{ results }}</pre>
               </p>
             </div>
-
           </div>
         </div>
       </Tab>
-      <Tab title="Tab2">Hello from tab2</Tab>
     </TabsWrapper>
   </div>
 </template>
@@ -88,6 +111,7 @@ const projectTitle = ref('');
 const classifier = ref(null);
 const classifierInitialized = ref(false);
 const pollingInterval = ref(null);
+const storedRepetations = ref([])
 
 const stopSensor = () => {
   const path = 'http://localhost:5001/stop_sensor';
@@ -106,9 +130,22 @@ const startPolling = () => {
     const path = 'http://localhost:5001/start_scanning';
     axios.get(path)
       .then((res) => {
-        const valuesString = res.data.status.join(', ');
+        const sensorData = res.data.status.sensor_data;
+        const setLength = res.data.status.set_length;
+        
+        const valuesString = sensorData.join(', ');
+        receivedSensorData.value = valuesString;  // Update with sensor data
+        results.value = {setLength};  // Update with set length
+
+        console.log(setLength);
+        console.log(sensorData);
+        if (setLength !== '' && sensorData.length > 0) {
+          storedRepetations.value.push(setLength);
+          console.log("AAAAAAAAAAA");
+        }
+
         console.log(valuesString);
-        receivedSensorData.value = valuesString;  // Directly assign valuesString
+        console.log(`Set length: ${setLength}`);
       })
       .catch((error) => {
         console.error(`Error fetching sensor data: ${error.message || error}`);
